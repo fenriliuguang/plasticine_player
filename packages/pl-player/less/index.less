@@ -1,0 +1,70 @@
+@import '../../index.less';
+.__pl_player__ {
+    position: relative;
+    .__pl_main_player{
+        width: 100%;
+        height: 100%;
+        font-size: 0;
+        z-index: 1;
+        display: block;
+    }
+
+    .__pl_player_controlBar {
+        z-index: 10;
+        overflow: hidden;
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        .__inner_controlBar {
+            visibility: hidden;
+        }
+    }
+}
+
+.__pl_player_buttons {
+    padding: 10px;
+    background-color: @light_black;
+    overflow: hidden;
+}
+
+.__play__ {
+    float: left;
+    margin: 0 10px;
+}
+
+.__time__ {
+    float: left;
+}
+
+.__voice__ {
+    float: right;
+    margin: 0 10px;
+}
+
+.__pl_cover__ {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    background-color: black;
+}
+
+.__inner_time__{
+    color: @smooth_white;
+    opacity: @opacity;
+}
+
+// default style
+.__player_button__ {
+    cursor: pointer;
+    color: @smooth_white;
+    user-select: none;
+    opacity: @opacity;
+    :hover {
+        opacity: 1;
+        color: @light_blue;
+    }
+    :active {
+        opacity: @opacity;
+    }
+}
