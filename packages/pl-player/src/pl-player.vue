@@ -6,7 +6,13 @@
         <!--
             视频标签
         -->
-        <video ref="video" class="__pl_main_player" :src="src">
+        <canvas
+            ref="canvas"
+            class="__pl_main_player"
+        ></canvas>
+        <video 
+            ref="video"
+            style="display: none;">
         
         </video>
 
@@ -18,7 +24,9 @@
                 <!--
                     时间进度条
                 -->
-                <div class="__pl_player_timeBar"></div>
+                <div class="__pl_player_timeBar">
+                    <div ref="timeBar_P" class="__timeBar_played__"></div>
+                </div>
                 <!--
                     控制按钮
                 -->
@@ -107,12 +115,15 @@ export default defineComponent({
         const video = ref();
         const controlBar = ref();
         const inner_controlBar = ref();
+        const canvas = ref();
+        const timeBar_P = ref();
 
         // data
         const currentTime = ref('00:00:00');
         const duration = ref('00:00:00');
         const isPlay = ref(props.autoplay);
         const isMute = ref(props.mute);
+        const d = ref(1);
 
         // methods
         const playSwitch = () => {
@@ -145,12 +156,32 @@ export default defineComponent({
         })
 
         onMounted(() => {
+            let cxt = (canvas.value as HTMLCanvasElement).getContext("2d");
+            let timer:number;
+
+            (video.value as HTMLVideoElement).src = props.src as string;
             // 时间监听
             (video.value as HTMLVideoElement).addEventListener('loadedmetadata', () => {
-                duration.value = toTimeString((video.value as HTMLVideoElement).duration);
+                d.value = (video.value as HTMLVideoElement).duration;
+                duration.value = toTimeString(d.value);
+                (canvas.value as HTMLCanvasElement).width = (video.value as HTMLVideoElement).videoWidth;
+                (canvas.value as HTMLCanvasElement).height = (video.value as HTMLVideoElement).videoHeight;
             });
             (video.value as HTMLVideoElement).addEventListener('timeupdate', () => {
-                currentTime.value = toTimeString((video.value as HTMLVideoElement).currentTime);
+                let c = (video.value as HTMLVideoElement).currentTime;
+                currentTime.value = toTimeString(c);
+
+                (timeBar_P.value as HTMLDivElement).style.width = `${c/d.value * 100}%`;
+
+                if(c == d.value)isPlay.value = false;
+            });
+            (video.value as HTMLVideoElement).addEventListener('play', () => {
+                timer = setInterval(() => {
+                    if((video.value as HTMLVideoElement).paused){
+                        clearInterval(timer);
+                    }
+                    cxt?.drawImage((video.value as HTMLVideoElement),0,0);
+                },16);
             });
 
             // 控制条动效
@@ -169,11 +200,13 @@ export default defineComponent({
             video,
             controlBar,
             inner_controlBar,
+            canvas,
 
             currentTime,
             duration,
             isPlay,
             isMute,
+            timeBar_P,
 
             isCoverShow,
 
