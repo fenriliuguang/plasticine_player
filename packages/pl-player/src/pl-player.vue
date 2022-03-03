@@ -1,5 +1,5 @@
 <template>
-    <div class="__pl_player__">
+    <div ref="player" class="__pl_player__">
         <div v-if="isCoverShow" class="__pl_cover__">
             <img style="object-fit: contain;width: 100%;height: 100%;" :src="cover">
         </div>
@@ -52,20 +52,38 @@
                     <div class="__time__">
                         <div class="__inner_time__">{{ currentTime }} / {{ duration }}</div>
                     </div>
+                    <div class="__fullScreen__">
+                        <div @click="fullScreenSwitch">
+                            <div v-if="!isFullScreen">
+                                <slot name="fullScreen">
+                                    <div class="__player_button__">
+                                        <i class="__iconfont">&#xe62b;</i>
+                                    </div>
+                                </slot>
+                            </div>
+                            <div v-else>
+                                <slot name="exitFullScreen">
+                                    <div class="__player_button__">
+                                        <i class="__iconfont">&#xe62c;</i>
+                                    </div>
+                                </slot>
+                            </div>
+                        </div>
+                    </div>
                     <div class="__speed__">
 
                     </div>
                     <div class="__voice__">
                         <div @click="muteSwitch">
                             <div v-if="!isMute">
-                                <slot name="__un-mute__">
+                                <slot name="un-mute">
                                     <div class="__player_button__">
                                         <i class="__iconfont">&#xe629;</i>
                                     </div>
                                 </slot>
                             </div>
                             <div v-else>
-                                <slot name="__mute__">
+                                <slot name="mute">
                                     <div class="__player_button__">
                                         <i class="__iconfont">&#xe62a;</i>
                                     </div>
@@ -112,10 +130,11 @@ export default defineComponent({
     },
     setup(props) {
         // dom
-        const video = ref();
-        const controlBar = ref();
+        const player = ref<HTMLDivElement>()
+        const video = ref<HTMLVideoElement>();
+        const controlBar = ref<HTMLDivElement>();
         const inner_controlBar = ref();
-        const canvas = ref();
+        const canvas = ref<HTMLCanvasElement>();
         const timeBar_P = ref();
 
         // data
@@ -123,11 +142,12 @@ export default defineComponent({
         const duration = ref('00:00:00');
         const isPlay = ref(props.autoplay);
         const isMute = ref(props.mute);
+        const isFullScreen = ref(false);
         const d = ref(1);
 
         // methods
         const playSwitch = () => {
-            const v = video.value as HTMLVideoElement;
+            const v = video.value!;
 
             if(v.paused) {
                 v.play();
@@ -138,7 +158,7 @@ export default defineComponent({
             isPlay.value = !v.paused;
         }
         const muteSwitch = () => {
-            const v = video.value as HTMLVideoElement;
+            const v = video.value!;
 
             isMute.value = v.muted = !v.muted;
         }
@@ -149,6 +169,27 @@ export default defineComponent({
 
             return (h > 99 ? h : ("0" + h).slice(-2)) + ":" + ("0" + m).slice(-2) + ":" + ("0" + s).slice(-2);
         }
+        const fullScreenSwitch = () => {
+            let el = player.value as any;
+            let doc = document as any;
+            let rfs = 
+                    el.requestFullscreen        ||
+                    el.requestFullScreen        ||
+                    el.webkitRequestFullScreen  ||
+                    el.mozRequestFullScreen     ||
+                    el.msRequestFullScreen;
+            let cfs = 
+                    doc.cancelFullScreen        ||
+                    doc.webkitCancelFullScreen  ||
+                    doc.mozCancelFullScreen     ||
+                    doc.exitFullscreen          ||
+                    doc.exitFullScreen;
+            if(isFullScreen.value){
+                cfs.call(doc);
+            }else{
+                rfs.call(el);
+            }
+        }
 
         // computer
         const isCoverShow = computed(() => {
@@ -156,47 +197,52 @@ export default defineComponent({
         })
 
         onMounted(() => {
-            let cxt = (canvas.value as HTMLCanvasElement).getContext("2d");
+            let cxt = canvas.value!.getContext("2d");
             let timer:number;
 
-            (video.value as HTMLVideoElement).src = props.src as string;
+            video.value!.src = props.src as string;
             // 时间监听
-            (video.value as HTMLVideoElement).addEventListener('loadedmetadata', () => {
-                d.value = (video.value as HTMLVideoElement).duration;
+            video.value!.addEventListener('loadedmetadata', () => {
+                d.value = video.value!.duration;
+
                 duration.value = toTimeString(d.value);
-                (canvas.value as HTMLCanvasElement).width = (video.value as HTMLVideoElement).videoWidth;
-                (canvas.value as HTMLCanvasElement).height = (video.value as HTMLVideoElement).videoHeight;
+                canvas.value!.width = video.value!.videoWidth;
+                canvas.value!.height = video.value!.videoHeight;
             });
-            (video.value as HTMLVideoElement).addEventListener('timeupdate', () => {
-                let c = (video.value as HTMLVideoElement).currentTime;
+            video.value!.addEventListener('timeupdate', () => {
+                let c = video.value!.currentTime;
+
                 currentTime.value = toTimeString(c);
-
-                (timeBar_P.value as HTMLDivElement).style.width = `${c/d.value * 100}%`;
-
+                timeBar_P.value!.style.width = `${c/d.value * 100}%`;
                 if(c == d.value)isPlay.value = false;
             });
-            (video.value as HTMLVideoElement).addEventListener('play', () => {
+            video.value!.addEventListener('play', () => {
                 timer = setInterval(() => {
-                    if((video.value as HTMLVideoElement).paused){
+                    if(video.value!.paused){
                         clearInterval(timer);
                     }
-                    cxt?.drawImage((video.value as HTMLVideoElement),0,0);
+                    cxt?.drawImage(video.value!,0,0);
                 },16);
             });
 
             // 控制条动效
-            (controlBar.value as HTMLDivElement).onmouseover = () => {
-                (inner_controlBar.value as HTMLDivElement).style.visibility = 'visible';
+            controlBar.value!.onmouseover = () => {
+                inner_controlBar.value!.style.visibility = 'visible';
             }
 
-            (controlBar.value as HTMLDivElement).onmouseleave = () => {
+            controlBar.value!.onmouseleave = () => {
                 setTimeout(() => {
-                    (inner_controlBar.value as HTMLDivElement).style.visibility = 'hidden';
+                    inner_controlBar.value!.style.visibility = 'hidden';
                 }, props.controlBarHoverTime);
+            }
+
+            document.onfullscreenchange = () => {
+                isFullScreen.value = !isFullScreen.value;
             }
         })
 
         return {
+            player,
             video,
             controlBar,
             inner_controlBar,
@@ -209,14 +255,17 @@ export default defineComponent({
             timeBar_P,
 
             isCoverShow,
+            isFullScreen,
 
             playSwitch,
-            muteSwitch
+            muteSwitch,
+            fullScreenSwitch
         }
     }
 })
 </script>
 
 <style scoped lang="less">
+@import '../less/media.less';
 @import '../less/index.less';
 </style>

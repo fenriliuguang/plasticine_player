@@ -3,6 +3,7 @@
     position: relative;
     background-color: @light_black;
     .__pl_main_player{
+        object-fit: contain;
         width: 100%;
         height: 100%;
         font-size: 0;
@@ -23,23 +24,20 @@
 }
 
 .__pl_player_buttons {
-    padding: 10px;
     background-color: @light_black;
     overflow: hidden;
 }
 
 .__play__ {
     float: left;
-    margin: 0 10px;
 }
 
 .__time__ {
     float: left;
 }
 
-.__voice__ {
+.__voice__ , .__fullScreen__{
     float: right;
-    margin: 0 10px;
 }
 
 .__pl_cover__ {
@@ -60,7 +58,6 @@
 }
 
 .__timeBar_played__{
-    height: 2px;
     width: 0;
     background-color: @light_blue;
 }
